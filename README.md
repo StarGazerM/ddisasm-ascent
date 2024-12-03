@@ -20,4 +20,3 @@ To run this artifacts you can use :
 cargo build --release
 DDISASM_GTIRB_MODULE_NAME=<binary> DDISASM_DEBUG_DIR=./data/disassembly/ LD_LIBRARY_PATH=/usr/local/src/ddisasm/build/lib:$LD_LIBRARY_PATH ./target/release/ddisasm-ascent ./data </path/to/binary>
 ```
-

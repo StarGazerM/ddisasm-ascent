@@ -369,12 +369,11 @@ ascent_par! {
         !reg_def_use_block_last_def(ea_used, _, var);
 
     reg_has_base_image(ea, reg) <-- 
-        let inlined_operation_773 = "LEA",
         base_address(image_base),
         pc_relative_operand(ea, _, image_base),
         code_in_block(ea, _),
         reg_def_use_def(ea, reg),
-        instruction(ea, _, _, inlined_operation_773, _, _, _, _, _, _);
+        instruction(ea, _, _, "LEA", _, _, _, _, _, _);
 
     reg_has_base_image(ea_code, reg) <-- 
         binary_format("PE"),
@@ -408,9 +407,8 @@ ascent_par! {
         track_register(reg);
 
     value_reg(ea, reg, ea, "NONE", 0, (((ea + size) as Number) + offset), 1) <-- 
-        let pc_reg = "RIP",
         code_in_block(ea, _),
-        arch_reg_arithmetic_operation(ea, reg, pc_reg, 1, offset),
+        arch_reg_arithmetic_operation(ea, reg, "RIP", 1, offset),
         instruction(ea, size, _, _, _, _, _, _, _, _),
         !instruction_has_relocation(ea, _),
         track_register(reg);
@@ -536,8 +534,7 @@ ascent_par! {
         stack_def_use_def_used(ea_store, (reg_base_store.clone(), *stack_pos_store), ea_load, tmp_v, _),
         let (reg_base_load, stack_pos_load) = tmp_v,
         arch_memory_access("LOAD", ea_load, _, _, reg2, reg_base_load, "NONE", _, stack_pos_load),
-        def_used_for_address(ea_load, reg2, type_here)
-        ;
+        def_used_for_address(ea_load, reg2, type_here);
 
     flags_and_jump_pair(ea_flags, ea_jmp, cc) <-- 
         arch_condition_flags_reg(reg),
@@ -572,8 +569,7 @@ ascent_par! {
     jump_table_element_access(ea, size, table_start_addr, "NONE") <-- 
         pc_relative_operand(ea, 1, table_start_addr),
         data_access(ea, _, _, _, _, _, _, size),
-        def_used_for_address(ea, _, type_here),
-        if *type_here == "Jump",
+        def_used_for_address(ea, _, "Jump"),
         reg_def_use_def_used(ea, reg1, ea_add, _),
         reg_def_use_def_used(ea2, reg2, ea_add, _),
         take_address(ea2, table_start_addr),
@@ -585,8 +581,7 @@ ascent_par! {
     jump_table_element_access(ea, size, table_start_addr, "NONE") <-- 
         pc_relative_operand(ea, 1, table_start_addr),
         data_access(ea, _, _, _, _, _, _, size),
-        def_used_for_address(ea, _, type_here),
-        if *type_here == "Call",
+        def_used_for_address(ea, _, "Call"),
         reg_def_use_def_used(ea, reg1, ea_add, _),
         reg_def_use_def_used(ea2, reg2, ea_add, _),
         take_address(ea2, table_start_addr),
@@ -640,14 +635,12 @@ ascent_par! {
 
     jump_table_signed(table_start, signed) <-- 
         jump_table_element_access(ea, size, table_start, _),
-        arch_extend_load(ea, signed, _tmp_71),
-        if *_tmp_71 == 8 * size;
+        arch_extend_load(ea, signed, 8 * size);
 
     jump_table_signed(table_start, signed) <-- 
         jump_table_element_access(ea, size, table_start, _),
         value_reg(ea_used, _, ea, reg, _, _, _),
-        arch_extend_reg(ea_used, reg, signed, _tmp_72),
-        if *_tmp_72 == 8 * size;
+        arch_extend_reg(ea_used, reg, signed, 8 * size);
 
     jump_table_signed(table_start, 0) <-- 
         jump_table_element_access(ea, _, table_start, _),
@@ -686,47 +679,39 @@ ascent_par! {
         reg_def_use_def_used(ea_add, reg_jump, ea_jump, _),
         reg_jump(ea_jump, _),
         code_in_block(ea_jump, _);
-        jump_table_start(ea_jump, size, (*table_reference as Address), (*table_reference as Address), 1) <-- 
+        jump_table_start(ea_jump, size, table_reference, table_reference, 1) <-- 
         reg_jump(ea_jump, _),
         code_in_block(ea_jump, _),
         reg_def_use_def_used(ea_base, reg, ea_jump, _),
-        instruction(ea_base, _, _, inlined_operation_591, _, _, _, _, _, _),
-        if *inlined_operation_591 == "ADD",
-        jump_table_element_access(ea_base, size, _tmp_73, _),
-        const_value_reg_used(ea_base, _, _, reg, table_reference),
-        if *_tmp_73 == (*table_reference as Address);
+        instruction(ea_base, _, _, "ADD", _, _, _, _, _, _),
+        jump_table_element_access(ea_base, size, table_reference, _),
+        const_value_reg_used(ea_base, _, _, reg, *table_reference as Number);
 
-    jump_table_start(ea_jump, size, (*table_reference as Address), (*table_reference as Address), -1) <-- 
+    jump_table_start(ea_jump, size, table_reference, table_reference, -1) <-- 
         reg_jump(ea_jump, _),
         code_in_block(ea_jump, _),
         reg_def_use_def_used(ea_base, reg, ea_jump, _),
-        instruction(ea_base, _, _, inlined_operation_593, _, _, _, _, _, _),
-        if *inlined_operation_593 == "SUB",
-        jump_table_element_access(ea_base, size, _tmp_74, _),
-        const_value_reg_used(ea_base, _, _, reg, table_reference),
-        if *_tmp_74 == (*table_reference as Address);
+        instruction(ea_base, _, _, "SUB", _, _, _, _, _, _),
+        jump_table_element_access(ea_base, size, table_reference, _),
+        const_value_reg_used(ea_base, _, _, reg, *table_reference as Number);
 
-    jump_table_start(ea_jump, size, table_start, (*table_reference as Address), 1) <-- 
+    jump_table_start(ea_jump, size, table_start, *table_reference as Address, 1) <-- 
         reg_jump(ea_jump, _),
         code_in_block(ea_jump, _),
         reg_def_use_def_used(ea_base, reg, ea_jump, _),
-        instruction(ea_base, _, _, inlined_operation_590, _, _, _, _, _, _),
-        if *inlined_operation_590 == "ADD",
+        instruction(ea_base, _, _, "ADD", _, _, _, _, _, _),
         jump_table_element_access(ea_base, size, table_start, _),
         const_value_reg_used(ea_base, _, _, reg, table_reference),
-        code_in_block(_tmp_153, _),
-        if *_tmp_153 == (*table_reference as Address);
+        code_in_block(*table_reference as Address, _);
 
     jump_table_start(ea_jump, size, table_start, (*table_reference as Address), -1) <-- 
         reg_jump(ea_jump, _),
         code_in_block(ea_jump, _),
         reg_def_use_def_used(ea_base, reg, ea_jump, _),
-        instruction(ea_base, _, _, inlined_operation_592, _, _, _, _, _, _),
-        if *inlined_operation_592 == "SUB",
+        instruction(ea_base, _, _, "SUB", _, _, _, _, _, _),
         jump_table_element_access(ea_base, size, table_start, _),
         const_value_reg_used(ea_base, _, _, reg, table_reference),
-        code_in_block(_tmp_154, _),
-        if *_tmp_154 == (*table_reference as Address);
+        code_in_block(*table_reference as Address, _);
 
     jump_table_target(ea, dest) <-- 
         jump_table_start(ea, size, table_start, _, _),
@@ -783,28 +768,24 @@ ascent_par! {
         value_reg_limit(block_end, block_next, reg, _, _),
         if reg != propagated_reg;
 
-    last_value_reg_limit(block_end, block_next, propagated_reg, propagated_val, propagated_type, steps + 1) <-- 
+    last_value_reg_limit(block_end, block_next, propagated_reg, propagated_val, "MAX", steps + 1) <-- 
         step_limit_small(step_limit),
-        last_value_reg_limit(_, ea, propagated_reg, propagated_val, propagated_type, steps),
+        last_value_reg_limit(_, ea, propagated_reg, propagated_val, "MAX", steps),
         if steps <= step_limit,
         code_in_block(ea, block),
         block_next(block, block_end, block_next),
         !reg_def_use_defined_in_block(block, propagated_reg),
-        value_reg_limit(block_end, block_next, propagated_reg, val, type_here),
-        if *propagated_type == "MAX",
-        if *type_here == "MAX",
+        value_reg_limit(block_end, block_next, propagated_reg, val, "MAX"),
         if propagated_val < val;
 
-    last_value_reg_limit(block_end, block_next, propagated_reg, propagated_val, propagated_type, steps + 1) <-- 
+    last_value_reg_limit(block_end, block_next, propagated_reg, propagated_val, "MIN", steps + 1) <-- 
         step_limit_small(step_limit),
-        last_value_reg_limit(_, ea, propagated_reg, propagated_val, propagated_type, steps),
+        last_value_reg_limit(_, ea, propagated_reg, propagated_val, "MIN", steps),
         if steps <= step_limit,
         code_in_block(ea, block),
         block_next(block, block_end, block_next),
         !reg_def_use_defined_in_block(block, propagated_reg),
-        value_reg_limit(block_end, block_next, propagated_reg, val, type_here),
-        if *propagated_type == "MIN",
-        if *type_here == "MIN",
+        value_reg_limit(block_end, block_next, propagated_reg, val, "MIN"),
         if propagated_val > val;
 
     last_value_reg_limit(block_end, ea_next, dst_reg, propagated_val + offset, propagated_type, steps + 1) <-- 
@@ -865,29 +846,17 @@ ascent_par! {
         code_in_block(ea_next, inlined_block_194),
         !reg_def_use_block_last_def(ea_mov, _, src_reg);
 
-    no_value_reg_limit(ea_jmp) <-- 
-        compare_and_jump_immediate(_, ea_jmp, cc, _, _),
-        if *cc == "O";
+    no_value_reg_limit(ea_jmp) <-- compare_and_jump_immediate(_, ea_jmp, "O", _, _);
 
-    no_value_reg_limit(ea_jmp) <-- 
-        compare_and_jump_immediate(_, ea_jmp, cc, _, _),
-        if *cc == "NO";
+    no_value_reg_limit(ea_jmp) <-- compare_and_jump_immediate(_, ea_jmp, "NO", _, _);
 
-    no_value_reg_limit(ea_jmp) <-- 
-        compare_and_jump_immediate(_, ea_jmp, cc, _, _),
-        if *cc == "P";
+    no_value_reg_limit(ea_jmp) <-- compare_and_jump_immediate(_, ea_jmp, "P", _, _);
 
-    no_value_reg_limit(ea_jmp) <-- 
-        compare_and_jump_immediate(_, ea_jmp, cc, _, _),
-        if *cc == "PE";
+    no_value_reg_limit(ea_jmp) <-- compare_and_jump_immediate(_, ea_jmp, "PE", _, _);
 
-    no_value_reg_limit(ea_jmp) <-- 
-        compare_and_jump_immediate(_, ea_jmp, cc, _, _),
-        if *cc == "S";
+    no_value_reg_limit(ea_jmp) <-- compare_and_jump_immediate(_, ea_jmp, "S", _, _);
 
-    no_value_reg_limit(ea_jmp) <-- 
-        compare_and_jump_immediate(_, ea_jmp, cc, _, _),
-        if *cc == "NS";
+    no_value_reg_limit(ea_jmp) <-- compare_and_jump_immediate(_, ea_jmp, "NS", _, _);
 
     no_value_reg_limit(ea_jmp) <-- 
         compare_and_jump_register(ea_cmp, ea_jmp, _, reg1, reg2),
@@ -918,13 +887,12 @@ ascent_par! {
         instruction(ea_cmp, _, _, operation, _, _, _, _, _, _),
         !arch_cmp_operation(operation);    
 
-    // Todo
     // .plan 1:(3,1,2)
-
     reg_def_use_def_used(ea_def, var, next_ea_used, next_index) <--
+        reg_def_use_live_var_used(next_used_block, var, var1, next_ea_used, next_index, _),
+        if var == var1,
         reg_def_use_live_var_at_prior_used(ea_used, next_used_block, var),
-        reg_def_use_def_used(ea_def, var, ea_used, _),
-        reg_def_use_live_var_used(next_used_block, var, var, next_ea_used, next_index, _);
+        reg_def_use_def_used(ea_def, var, ea_used, _);
 
     reg_def_use_def_used(ea_def, reg, ea_used, index) <--
         reg_def_use_return_val_used(_, callee, reg, ea_used, index),
@@ -971,8 +939,7 @@ ascent_par! {
     reg_has_got(ea, reg) <--
         value_reg(ea, reg, _, "NONE", _, offset, _),
         got_section(name),
-        loaded_section(tmp_88, _, name),
-        if *tmp_88 == (*offset as Address);
+        loaded_section((*offset as Address), _, name);
 
     // reg_reg_arithmetic_operation_defs(EA,Reg_def,EA_def1,Reg1,EA_def2,Reg2,Mult,Offset):-
     //     def_used_for_address(EA,Reg_def,_),
@@ -1055,8 +1022,8 @@ ascent_par! {
         jump_table_signed(table_start, inlined_signed_1122),
         if *inlined_signed_1122 == 0,
         if unsafe { functor_data_valid(last_ea + size, *size as size_t) } == 1,
-        code_in_block(_tmp_320, _),
-        if *_tmp_320 == (*reference + unsafe { functor_data_unsigned(last_ea + size, *size as size_t) } as Address);
+        let _tmp_320 = *reference + unsafe { functor_data_unsigned(last_ea + size, *size as size_t) } as Address,
+        code_in_block(_tmp_320, _);
 
     relative_jump_table_entry_candidate(last_ea + size, table_start, size, reference, dest, scale, offset) <--
         relative_jump_table_entry_candidate(last_ea, table_start, size, reference, _, scale, offset),
@@ -1088,8 +1055,8 @@ ascent_par! {
         jump_table_signed(table_start, inlined_signed_1124),
         if *inlined_signed_1124 == 1,
         if unsafe { functor_data_valid(last_ea + size, *size as size_t) } == 1,
-        code_in_block(_tmp_321, _),
-        if *_tmp_321 == (((*reference as Number) + ((*scale as Number) * unsafe { functor_data_signed(last_ea + size, *size as size_t) })) as Address);
+        let _tmp_321 = ((*reference as Number) + ((*scale as Number) * unsafe { functor_data_signed(last_ea + size, *size as size_t) })) as Address,
+        code_in_block(_tmp_321, _);
 
     relative_jump_table_entry_candidate(last_ea + size, table_start, size, reference, dest, scale, offset) <--
         relative_jump_table_entry_candidate(last_ea, table_start, size, reference, _, scale, offset),
@@ -1102,10 +1069,10 @@ ascent_par! {
         jump_table_signed(table_start, inlined_signed_1125),
         if *inlined_signed_1125 == 1,
         if unsafe { functor_data_valid(last_ea + size, *size as size_t) } == 1,
+        let inlined_dest_1125 = ((*reference as Number) + ((*scale as Number) * unsafe { functor_data_signed(last_ea + size, *size as size_t) })) as Address,
         is_padding(inlined_dest_1125),
         after_end(inlined_dest_1125, inlined_end_1125),
         after_end(dest, inlined_end_1125),
-        if *inlined_dest_1125 == (((*reference as Number) + ((*scale as Number) * unsafe { functor_data_signed(last_ea + size, *size as size_t) })) as Address),
         !is_padding(dest),
         code_in_block(dest, _);
 
@@ -1216,16 +1183,14 @@ ascent_par! {
         tls_descriptor(ea, offset),
         pc_relative_operand(load, _, ea),
         arch_call(call, _),
-        const_value_reg_used(call, load, _, _, _tmp_137),
-        if *_tmp_137 == (*ea as Number);
+        const_value_reg_used(call, load, _, _, (*ea as Number));
 
     tls_desc_call(load, call, (start + offset)) <--
         tls_segment(start, _, _),
         tls_descriptor(ea, offset),
         got_relative_operand(load, _, ea),
         arch_call(call, _),
-        const_value_reg_used(call, load, _, _, _tmp_138),
-        if *_tmp_138 == (*ea as Number);
+        const_value_reg_used(call, load, _, _, (*ea as Number));
 
     tls_get_addr(load, call, (start + offset)) <--
         binary_format("ELF"),
